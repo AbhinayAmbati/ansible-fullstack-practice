@@ -1,36 +1,18 @@
 import { useState } from 'react';
+import PropTypes from 'prop-types';
 import { employeeAPI } from '../services/api';
+import EditEmployeeModal from './EditEmployeeModal';
 
 const SearchResults = ({ employee, onClearSearch, onEmployeeUpdated, setMessage }) => {
-  const [editingField, setEditingField] = useState(null);
-  const [editData, setEditData] = useState({});
-  const [isUpdating, setIsUpdating] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  const handleEdit = (field, value) => {
-    setEditingField(field);
-    setEditData({ [field]: value });
+  const handleEdit = () => {
+    setIsEditModalOpen(true);
   };
 
-  const handleSave = async () => {
-    setIsUpdating(true);
-    try {
-      await employeeAPI.updateEmployee(employee.id, editData);
-      setMessage({ type: 'success', text: 'Employee updated successfully!' });
-      setEditingField(null);
-      setEditData({});
-      onEmployeeUpdated();
-    } catch (error) {
-      console.error('Error updating employee:', error);
-      setMessage({ type: 'error', text: 'Failed to update employee. Please try again.' });
-    } finally {
-      setIsUpdating(false);
-    }
-  };
-
-  const handleCancel = () => {
-    setEditingField(null);
-    setEditData({});
+  const handleCloseEditModal = () => {
+    setIsEditModalOpen(false);
   };
 
   const handleDelete = async () => {
@@ -50,156 +32,148 @@ const SearchResults = ({ employee, onClearSearch, onEmployeeUpdated, setMessage 
     }
   };
 
-  const renderField = (label, field, value, editable = false) => {
-    const isEditing = editingField === field;
-    
-    return (
-      <div className="bg-gray-50 p-4 rounded-lg">
-        <label className="block text-sm font-medium text-gray-600 mb-2">{label}</label>
-        {editable && isEditing ? (
-          <div className="flex items-center space-x-2">
-            {field === 'skillRating' ? (
-              <input
-                type="number"
-                min="1"
-                max="10"
-                value={editData[field] || ''}
-                onChange={(e) => setEditData({ [field]: parseInt(e.target.value) || 0 })}
-                className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              />
-            ) : field === 'yearsOfExperience' ? (
-              <input
-                type="number"
-                min="0"
-                value={editData[field] || ''}
-                onChange={(e) => setEditData({ [field]: parseInt(e.target.value) || 0 })}
-                className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              />
-            ) : field === 'email' ? (
-              <input
-                type="email"
-                value={editData[field] || ''}
-                onChange={(e) => setEditData({ [field]: e.target.value })}
-                className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              />
-            ) : (
-              <input
-                type="text"
-                value={editData[field] || ''}
-                onChange={(e) => setEditData({ [field]: e.target.value })}
-                className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              />
-            )}
-            <button
-              onClick={handleSave}
-              disabled={isUpdating}
-              className="px-3 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 disabled:opacity-50"
-            >
-              {isUpdating ? 'Saving...' : 'Save'}
-            </button>
-            <button
-              onClick={handleCancel}
-              className="px-3 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600"
-            >
-              Cancel
-            </button>
-          </div>
-        ) : (
-          <div className="flex items-center justify-between">
-            <span className="text-lg font-semibold text-gray-800">
-              {field === 'skillRating' ? `${value}/10` : 
-               field === 'yearsOfExperience' ? `${value} years` : value}
-            </span>
-            {editable && (
-              <button
-                onClick={() => handleEdit(field, value)}
-                className="px-3 py-1 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 text-sm"
-              >
-                Edit
-              </button>
-            )}
-          </div>
-        )}
-      </div>
-    );
-  };
-
   return (
-    <div className="bg-white p-8 rounded-xl shadow-lg border border-gray-200 mb-8">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center">
-          <div className="bg-green-100 p-3 rounded-lg mr-4">
-            <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-            </svg>
+    <>
+      <div className="bg-white rounded-lg shadow-md p-4 space-y-4">
+        {/* Employee Info Header */}
+        <div className="flex items-center justify-between pb-3 border-b border-gray-200">
+          <div className="flex items-center space-x-3">
+            <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-full flex items-center justify-center">
+              <span className="text-white font-bold text-lg">
+                {employee.name.charAt(0).toUpperCase()}
+              </span>
+            </div>
+            <div>
+              <h5 className="font-bold text-gray-900">{employee.name}</h5>
+              <p className="text-sm text-gray-600">ID: {employee.employeeId}</p>
+            </div>
           </div>
-          <div>
-            <h2 className="text-3xl font-bold text-gray-800">Employee Details</h2>
-            <p className="text-gray-600 mt-1">Complete information for {employee.name}</p>
+          <div className="flex space-x-2">
+            <button
+              onClick={handleEdit}
+              className="px-3 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors duration-200 flex items-center"
+            >
+              <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+              </svg>
+              Edit
+            </button>
+            <button
+              onClick={handleDelete}
+              disabled={isDeleting}
+              className="px-3 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 disabled:opacity-50 transition-colors duration-200 flex items-center"
+            >
+              {isDeleting ? (
+                <>
+                  <svg className="animate-spin w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Deleting...
+                </>
+              ) : (
+                <>
+                  <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  </svg>
+                  Delete
+                </>
+              )}
+            </button>
           </div>
         </div>
-        <div className="flex items-center space-x-3">
-          <button
-            onClick={onClearSearch}
-            className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors duration-200 flex items-center"
-          >
-            <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-            Clear Search
-          </button>
-          <button
-            onClick={handleDelete}
-            disabled={isDeleting}
-            className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors duration-200 flex items-center disabled:opacity-50"
-          >
-            {isDeleting ? (
-              <>
-                <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-                Deleting...
-              </>
-            ) : (
-              <>
-                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                </svg>
-                Delete Employee
-              </>
-            )}
-          </button>
+
+        {/* Employee Details */}
+        <div className="grid grid-cols-1 gap-3">
+          <div className="bg-gray-50 p-3 rounded-lg">
+            <label className="block text-xs font-medium text-gray-600 mb-1">Email</label>
+            <div className="text-sm font-semibold text-gray-800">
+              <a href={`mailto:${employee.email}`} className="text-blue-600 hover:text-blue-800">
+                {employee.email}
+              </a>
+            </div>
+          </div>
+          
+          <div className="bg-gray-50 p-3 rounded-lg">
+            <label className="block text-xs font-medium text-gray-600 mb-1">Department</label>
+            <div className="text-sm font-semibold text-gray-800">
+              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                {employee.department}
+              </span>
+            </div>
+          </div>
+          
+          <div className="bg-gray-50 p-3 rounded-lg">
+            <label className="block text-xs font-medium text-gray-600 mb-1">Designation</label>
+            <div className="text-sm font-semibold text-gray-800">{employee.designation}</div>
+          </div>
+          
+          <div className="bg-gray-50 p-3 rounded-lg">
+            <label className="block text-xs font-medium text-gray-600 mb-1">Primary Skill</label>
+            <div className="text-sm font-semibold text-gray-800">
+              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                {employee.primarySkill}
+              </span>
+            </div>
+          </div>
+          
+          <div className="bg-gray-50 p-3 rounded-lg">
+            <label className="block text-xs font-medium text-gray-600 mb-1">Secondary Skill</label>
+            <div className="text-sm font-semibold text-gray-800">
+              {employee.secondarySkill ? (
+                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                  {employee.secondarySkill}
+                </span>
+              ) : (
+                <span className="text-gray-500 italic">Not specified</span>
+              )}
+            </div>
+          </div>
+          
+          <div className="bg-gray-50 p-3 rounded-lg">
+            <label className="block text-xs font-medium text-gray-600 mb-1">Skill Rating</label>
+            <div className="text-sm font-semibold text-gray-800">
+              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                {employee.skillRating}/10
+              </span>
+            </div>
+          </div>
+          
+          <div className="bg-gray-50 p-3 rounded-lg">
+            <label className="block text-xs font-medium text-gray-600 mb-1">Years of Experience</label>
+            <div className="text-sm font-semibold text-gray-800">{employee.yearsOfExperience} years</div>
+          </div>
         </div>
       </div>
 
-      {/* Employee Details Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {renderField('Employee ID', 'employeeId', employee.employeeId, true)}
-        {renderField('Full Name', 'name', employee.name, true)}
-        {renderField('Department', 'department', employee.department, true)}
-        {renderField('Designation', 'designation', employee.designation, true)}
-        {renderField('Primary Skill', 'primarySkill', employee.primarySkill, true)}
-        {renderField('Secondary Skill', 'secondarySkill', employee.secondarySkill, true)}
-        {renderField('Skill Rating', 'skillRating', employee.skillRating, true)}
-        {renderField('Years of Experience', 'yearsOfExperience', employee.yearsOfExperience, true)}
-        {renderField('Email Address', 'email', employee.email, true)}
-      </div>
-
-      {/* Additional Info */}
-      <div className="mt-8 p-4 bg-blue-50 rounded-lg border border-blue-200">
-        <div className="flex items-center">
-          <svg className="w-5 h-5 text-blue-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-          <span className="text-blue-800 font-medium">
-            You can edit any employee field by clicking the "Edit" button next to each field.
-          </span>
-        </div>
-      </div>
-    </div>
+      {/* Edit Employee Modal */}
+      <EditEmployeeModal
+        employee={employee}
+        isOpen={isEditModalOpen}
+        onClose={handleCloseEditModal}
+        onEmployeeUpdated={onEmployeeUpdated}
+        setMessage={setMessage}
+      />
+    </>
   );
+};
+
+SearchResults.propTypes = {
+  employee: PropTypes.shape({
+    id: PropTypes.number.isRequired,
+    employeeId: PropTypes.string.isRequired,
+    name: PropTypes.string.isRequired,
+    email: PropTypes.string.isRequired,
+    department: PropTypes.string.isRequired,
+    designation: PropTypes.string.isRequired,
+    primarySkill: PropTypes.string.isRequired,
+    secondarySkill: PropTypes.string.isRequired,
+    skillRating: PropTypes.number.isRequired,
+    yearsOfExperience: PropTypes.number.isRequired,
+  }).isRequired,
+  onClearSearch: PropTypes.func.isRequired,
+  onEmployeeUpdated: PropTypes.func.isRequired,
+  setMessage: PropTypes.func.isRequired,
 };
 
 export default SearchResults;

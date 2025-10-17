@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import PropTypes from 'prop-types';
 import { employeeAPI } from '../services/api';
 
 const EmployeeForm = ({ onEmployeeAdded, setMessage }) => {
@@ -231,6 +232,11 @@ const EmployeeForm = ({ onEmployeeAdded, setMessage }) => {
       </form>
     </div>
   );
+};
+
+EmployeeForm.propTypes = {
+  onEmployeeAdded: PropTypes.func.isRequired,
+  setMessage: PropTypes.func.isRequired,
 };
 
 export default EmployeeForm;
